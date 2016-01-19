@@ -7,4 +7,4 @@ R markdown and compiled HTML file describing the proposed predictive model and a
 + ML_Project.Rmd
 + ML_Project.html
 
-
+The report (HTML version) can be viewd in the following link: http://mozziemo.github.io/PMLProject/
