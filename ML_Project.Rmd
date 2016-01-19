@@ -1,0 +1,99 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Mozziemo"
+date: "Monday, January 18, 2016"
+output: html_document
+---
+##Executive Summary
+The goal of this project is to build a model that predicts the manner in which people did the exercise, using data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants: They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. It is the "classe" variable among 160 variables in the data set. The data were split into three parts, training, validation, and test sets, and they were treated with the same preprocessing procedures, including standardization. The predictive model was built using a Random Forest classification method with 3-fold cross-validation for the training set and evaluated on the validation set. The Random Forest model was turned out to have the accuracy of 99.97% (i.e., Out of sample error of 0.03%) for the given data set, in turn, it was chosen to predict 20 different test cases, which resulted in 100% accuracy. 
+
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. More information, including the data for this project, is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+## Data Load and Preprocessing
+Training and testing datasets (containing 19622 and 20 observations of 160 variables, respectively) were loaded in the working directory.  
+First, columns with more than 20% of NAs were removed from both training and testing sets. Next, the original training dataset was split into two parts, a training (70% of the original training set) and a validation set (30% of the original training set) for cross-validation. That is, a predictive model has been built on the new training set, and evaluated on the validation data set. The first column of the every data set is simply the index, and has been removed as it is not a predictor variable. In addition, an effort was made to remove near zero variance predictors, though none was identified as such and, in turn, no additional column was removed. Lastly, all data sets were standardizing using caret's preProcess function. 
+
+```{r, eval=FALSE}
+# Download data sets in the working directory
+fileUrl1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+fileUrl2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(fileUrl1,destfile="pml-training.csv")
+download.file(fileUrl2,destfile="pml-testing.csv")
+```
+
+```{r, warning=FALSE}
+library(caret)
+set.seed(12345)
+
+# Load data sets 
+training0 <- read.csv("pml-training.csv",header = TRUE,
+                      na.strings = c("NA",""))
+test0 <- read.csv("pml-testing.csv",header = TRUE,
+                  na.strings = c("NA",""))
+
+# Remove columns that contain NAs more than 20% of total observation
+training0 <- training0[, colSums(is.na(training0)) < 0.2*nrow(training0)]
+test0 <- test0[, colSums(is.na(test0)) < 0.2*nrow(test0)]
+
+# Split the training set into two parts, training and validation sets
+inTrain <- createDataPartition(y=training0$classe, p=0.7, list=FALSE)
+training <- training0[inTrain,-1]
+validation <- training0[-inTrain,-1]
+test <- test0[,-1] 
+# The first column (X) with index was removed from all data sets
+
+# Identification of near zero variance predictors
+nzv <- nearZeroVar(training,saveMetrics = TRUE)
+summary(nzv$zeroVar)
+
+# Standardizing using preProcess function
+preObj <- preProcess(training[,-59],method=c("center","scale"))
+training <- predict(preObj,training)
+validation <- predict(preObj,validation)
+test <- predict(preObj,test)
+
+```
+
+##Building a Predictive Model 
+First, the predictive model was built using a Random Forest classification method with 3-fold cross-validation for the training set. As shown below, the random forest classification model has 500 trees, #No. of variables tried at each split is 41, and OOB estimate of  error rate is 0.09%, which is excellent. 
+
+```{r, warning=FALSE}
+library(caret); library(randomForest)
+
+# Build a model using Random Forest and resampling for cross validation
+modFit.rf <- train(classe~., method="rf", data=training, 
+             trControl = trainControl(method="cv"),number=3)
+
+modFit.rf$finalModel
+
+# Plot the importance of predictor variables
+rfImp <- varImp(modFit.rf,scale=FALSE)
+plot(rfImp, top=10)
+
+```
+
+##Prediction of the validation set and Out of sample error 
+Random Forest model accuracy of the prediction upon the validation set is 0.9997 or 99.97%. In other words, Out of sample error is 0.0003 or 0.03%. 
+
+```{r}
+# Predict the validation set
+pred.rf <- predict(modFit.rf, newdata=validation)
+confusionMatrix(pred.rf, validation$classe)
+
+```
+
+The current Random Forest model appears to be almost perfect, leaving little room for improvement. Thus, it was chosen as the final predictive model and no additional effort was made to further fine-tune it. 
+
+##Prediction of the test set  
+Finally, the Random Forest model was applied to predict 20 different test cases, which resulted in 100% accuracy. 
+
+```{r}
+#Predict the test set using the Random Forest model
+predRF_Test <- predict(modFit.rf, newdata=test)
+predRF_Test
+
+```
+
+## Conclusion
+The Random Forest classification model in combination with a couple of simple data preprocessing procedures (such as removing irrelevant data columns and standardizing) is turned out to be a great approach to predict the manner in which people did the exercise, using the given data from accelerometers on the belt, forearm, arm, and dumbell of participants.
