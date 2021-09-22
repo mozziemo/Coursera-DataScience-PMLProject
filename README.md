@@ -1,8 +1,6 @@
-# Coursera Johns Hopkins Data Science Specialization
-#### https://www.coursera.org/specializations/jhu-data-science
-
 # Practical Machine Learning Project
-### Part of the Data Science  Specialization by Johns Hopkins on Coursera 
+### Part of the Data Science  Specialization by Johns Hopkins University on Coursera 
+#### https://www.coursera.org/specializations/jhu-data-science
 
 This folder contains the Practical Machine Learning Project materials:
 R markdown and compiled HTML file describing the proposed predictive model and analysis
